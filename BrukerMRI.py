@@ -42,7 +42,10 @@ class BrukerData:
         elif (self.method["Method"] == 'FLASH' or 
               self.method["Method"] == 'mic_flash'):
             self.k_data = self._GenKspace_FLASH()
+        elif (self.method["Method"] == 'mic_msme'):
+            self.k_data = self._GenKspace_MSME()
         else:
+            print "Method: ",self.method["Method"]
             raise NameError("Unknown method")
 
 
@@ -83,12 +86,43 @@ class BrukerData:
               self.method["Method"] == 'mic_flash'):
             self. _Reco_FLASH(**kwargs)
 
+        elif (self.method["Method"] == 'mic_msme'):
+            self. _Reco_MSME(**kwargs)
+
         else:
             raise NameError("Unknown method")
 
     # ***********************************************************
     #  method specific reordering and reco functions  start here
-    # ***********************************************************   
+    # ***********************************************************
+
+    def _GenKspace_MSME(self):
+
+        complexValues = self.raw_fid
+
+        Matrix = self.method["PVM_Matrix"]
+
+        kSpace = np.reshape(complexValues, (-1,Matrix[1]),
+                          order="F")
+        kSpace = np.reshape(kSpace, (-1, Matrix[0], Matrix[1]))
+        kSpace = np.transpose(kSpace, (1,2,0))
+        return kSpace
+
+    def _Reco_MSME(self, **kwargs):
+        
+        k_data = self.k_data
+        reco_data = np.zeros(k_data.shape)
+
+        for i in range(0,self.k_data.shape[2]):
+            reco_data[:,:,i] = abs(fft_image(self.k_data[:,:,i]))
+
+        self.reco_data = reco_data
+
+
+
+
+
+
     def _GenKspace_FLASH(self):
 
         complexValues = self.raw_fid
